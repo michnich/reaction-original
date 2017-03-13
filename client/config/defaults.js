@@ -26,5 +26,14 @@ Session.setDefault("DEFAULT_WORKFLOW", DEFAULT_WORKFLOW);
 Session.setDefault("INDEX_OPTIONS", INDEX_OPTIONS);
 Session.setDefault("productScrollLimit", ITEMS_INCREMENT);
 
+Session.set("INDEX_OPTIONS", {
+  template: "customHomePageTemplate",
+  layoutHeader: "customHeader",
+  layoutFooter: "footer",
+  notFound: "notFound",
+  dashboardControls: "dashboardControls",
+  adminControlsFooter: "adminControlsFooter"
+});
+
 // autoform default template
 AutoForm.setDefaultTemplate("bootstrap3");
