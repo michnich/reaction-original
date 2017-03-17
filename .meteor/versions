@@ -110,6 +110,7 @@ meteorhacks:meteorx@1.4.1
 meteorhacks:picker@1.0.3
 meteorhacks:ssr@2.2.0
 meteorhacks:subs-manager@1.6.4
+meteortoys:toykit@3.0.4
 minifier-css@1.2.16
 minifier-js@1.2.17
 minimongo@1.0.20
@@ -122,6 +123,7 @@ mongo@1.1.15
 mongo-id@1.0.6
 mongo-livedata@1.0.12
 mrt:later@1.6.1
+msavin:mongol@2.0.1
 npm-bcrypt@0.9.2
 npm-mongo@2.2.16_1
 oauth@1.1.13
