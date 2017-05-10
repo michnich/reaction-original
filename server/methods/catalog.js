@@ -2,7 +2,8 @@ import _ from  "lodash";
 import { EJSON } from "meteor/ejson";
 import { check } from "meteor/check";
 import { Meteor } from "meteor/meteor";
-import { Catalog, copyFile, ReactionProduct } from "/lib/api";
+import { copyFile, ReactionProduct } from "/lib/api";
+import { ProductRevision as Catalog } from "/imports/plugins/core/revisions/server/hooks";
 import { Media, Products, Revisions, Tags } from "/lib/collections";
 import { Logger, Reaction } from "/server/api";
 
@@ -700,12 +701,12 @@ Meteor.methods({
   },
 
   /**
-   * products/deleteProduct
-   * @summary delete a product and unlink it from all media
+   * products/archiveProduct
+   * @summary archive a product and unlink it from all media
    * @param {String} productId - productId to delete
    * @returns {Number} returns number of removed products
    */
-  "products/deleteProduct": function (productId) {
+  "products/archiveProduct": function (productId) {
     check(productId, Match.OneOf(Array, String));
     // must have admin permission to delete
     if (!Reaction.hasPermission("createProduct") && !Reaction.hasAdminAccess()) {
@@ -792,7 +793,7 @@ Meteor.methods({
   "products/updateProductField": function (_id, field, value) {
     check(_id, String);
     check(field, String);
-    check(value, Match.OneOf(String, Object, Array, Boolean));
+    check(value, Match.OneOf(String, Object, Array, Boolean, Number));
     // must have createProduct permission
     if (!Reaction.hasPermission("createProduct")) {
       throw new Meteor.Error(403, "Access Denied");
@@ -810,15 +811,24 @@ Meteor.methods({
     }
 
     // we need to use sync mode here, to return correct error and result to UI
-    const result = Products.update(_id, {
-      $set: update
-    }, {
-      selector: {
-        type: type
-      }
-    });
+    let result;
 
-    if (typeof result === "number") {
+    try {
+      result = Products.update(_id, {
+        $set: update
+      }, {
+        selector: {
+          type: type
+        }
+      });
+    } catch (e) {
+      throw new Meteor.Error(e.message);
+    }
+
+    // If we get a result from the product update,
+    // meaning the update went past revision control,
+    // denormalize and attach results to top-level product
+    if (result === 1) {
       if (type === "variant" && ~toDenormalize.indexOf(field)) {
         denormalize(doc.ancestors[0], field);
       }

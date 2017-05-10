@@ -33,7 +33,7 @@ function quantityProcessing(product, variant, itemQty = 1) {
     default: // type: `simple` // todo: maybe it should be "variant"
       if (quantity < MIN) {
         quantity = MIN;
-      } else if (quantity > MAX) {
+      } else if (variant.inventoryPolicy && quantity > MAX) {
         quantity = MAX;
       }
   }
@@ -273,6 +273,17 @@ Meteor.methods({
       });
     }
 
+    // attach current user currency to cart
+    const currentUser = Meteor.user();
+    let userCurrency = Reaction.getShopCurrency();
+
+    // Check to see if the user has a custom currency saved to their profile
+    // Use it if they do
+    if (currentUser && currentUser.profile && currentUser.profile.currency) {
+      userCurrency = currentUser.profile.currency;
+    }
+    Meteor.call("cart/setUserCurrency", currentCartId, userCurrency);
+
     return currentCartId;
   },
 
@@ -315,6 +326,7 @@ Meteor.methods({
         variant = doc;
       }
     });
+
     // TODO: this lines still needed. We could uncomment them in future if
     // decide to not completely remove product data from this method
     // const product = Collections.Products.findOne(productId);
@@ -503,6 +515,12 @@ Meteor.methods({
     const order = Object.assign({}, cart);
     const sessionId = cart.sessionId;
 
+    if (!order.items || order.items.length === 0) {
+      const msg = "An error occurred saving the order. Missing cart items.";
+      Logger.error(msg);
+      throw new Meteor.Error("no-cart-items", msg);
+    }
+
     Logger.debug("cart/copyCartToOrder", cartId);
     // reassign the id, we'll get a new orderId
     order.cartId = cart._id;
@@ -551,55 +569,54 @@ Meteor.methods({
       order.shipping = [];
     }
 
-    const expandedItems = [];
+    // Add current exchange rate into order.billing.currency
+    // If user currenct === shop currency, exchange rate = 1.0
+    const currentUser = Meteor.user();
+    let userCurrency = Reaction.getShopCurrency();
+    let exchangeRate = "1.00";
 
-    // init item level workflow
-    _.each(order.items, function (item) {
-      // Split items based on their quantity
-      for (let i = 0; i < item.quantity; i++) {
-        // Clone Item
-        const itemClone = _.clone(item);
+    if (currentUser && currentUser.profile && currentUser.profile.currency) {
+      userCurrency = Meteor.user().profile.currency;
+    }
 
-        // Remove the quantity since we'll be expanding each item as
-        // it's own record
-        itemClone.quantity = 1;
+    if (userCurrency !== Reaction.getShopCurrency()) {
+      const userExchangeRate = Meteor.call("shop/getCurrencyRates", userCurrency);
 
-        itemClone._id = Random.id();
-        itemClone.cartItemId = item._id; // used for transitioning inventry
-        itemClone.workflow = {
-          status: "new"
-        };
+      if (typeof userExchangeRate === "number") {
+        exchangeRate = userExchangeRate;
+      } else {
+        Logger.warn("Failed to get currency exchange rates. Setting exchange rate to null.");
+        exchangeRate = null;
+      }
+    }
 
-        expandedItems.push(itemClone);
+    if (!order.billing[0].currency) {
+      order.billing[0].currency = {
+        userCurrency: userCurrency
+      };
+    }
 
-        // Add each item clone to the first shipment
-        if (order.shipping[0].items) {
-          order.shipping[0].items.push({
-            _id: itemClone._id,
-            productId: itemClone.productId,
-            shopId: itemClone.shopId,
-            variantId: itemClone.variants._id
-          });
-        }
+    _.each(order.items, (item) => {
+      if (order.shipping[0].items) {
+        order.shipping[0].items.push({
+          _id: item._id,
+          productId: item.productId,
+          shopId: item.shopId,
+          variantId: item.variants._id
+        });
       }
     });
 
-    // Replace the items with the expanded array of items
-    order.items = expandedItems;
+    order.shipping[0].items.packed = false;
+    order.shipping[0].items.shipped = false;
+    order.shipping[0].items.delivered = false;
 
-    if (!order.items || order.items.length === 0) {
-      const msg = "An error occurred saving the order. Missing cart items.";
-      Logger.error(msg);
-      throw new Meteor.Error("no-cart-items", msg);
-    }
-
-    // set new workflow status
+    order.billing[0].currency.exchangeRate = exchangeRate;
     order.workflow.status = "new";
     order.workflow.workflow = ["coreOrderWorkflow/created"];
 
     // insert new reaction order
     const orderId = Collections.Orders.insert(order);
-    Logger.info("Created orderId", orderId);
 
     if (orderId) {
       Collections.Cart.remove({
@@ -699,6 +716,65 @@ Meteor.methods({
     // this will transition to review
     return Meteor.call("workflow/pushCartWorkflow", "coreCartWorkflow",
       "coreCheckoutShipping");
+  },
+
+  /**
+   * cart/setUserCurrency
+   * @summary saves user currency in cart, to be paired with order/setCurrencyExhange
+   * @param {String} cartId - cartId to apply setUserCurrency
+   * @param {String} userCurrency - userCurrency to set to cart
+   * @return {Number} update result
+   */
+  "cart/setUserCurrency": function (cartId, userCurrency) {
+    check(cartId, String);
+    check(userCurrency, String);
+    const cart = Collections.Cart.findOne({
+      _id: cartId
+    });
+    if (!cart) {
+      Logger.error(`Cart not found for user: ${ this.userId }`);
+      throw new Meteor.Error("Cart not found for user with such id");
+    }
+
+    const userCurrencyString = {
+      userCurrency: userCurrency
+    };
+
+    let selector;
+    let update;
+
+    if (cart.billing) {
+      selector = {
+        "_id": cartId,
+        "billing._id": cart.billing[0]._id
+      };
+      update = {
+        $set: {
+          "billing.$.currency": userCurrencyString
+        }
+      };
+    } else {
+      selector = {
+        _id: cartId
+      };
+      update = {
+        $addToSet: {
+          billing: {
+            currency: userCurrencyString
+          }
+        }
+      };
+    }
+
+    // add / or set the shipping address
+    try {
+      Collections.Cart.update(selector, update);
+    } catch (e) {
+      Logger.error(e);
+      throw new Meteor.Error("An error occurred adding the currency");
+    }
+
+    return true;
   },
 
   /**
