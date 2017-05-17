@@ -29,6 +29,7 @@ ShippoApi.methods.getAddressList = new ValidatedMethod({
   }).validator(),
   run({ apiKey }) {
     const shippoObj = new Shippo(apiKey);
+    shippoObj.set("version", "2016-10-25");
     const getAddressListFiber = Meteor.wrapAsync(shippoObj.address.list, shippoObj.address);
     try {
       const addressList = getAddressListFiber();
@@ -62,16 +63,31 @@ ShippoApi.methods.getCarrierAccountsList = new ValidatedMethod({
   }).validator(),
   run({ apiKey }) {
     const shippoObj = new Shippo(apiKey);
+    shippoObj.set("version", "2016-10-25");
+    let allCarriers = [];
 
-    const getCarrierAccountsListFiber = Meteor.wrapAsync(shippoObj.carrieraccount.list, shippoObj.carrieraccount);
-    try {
-      const carrierAccountList = getCarrierAccountsListFiber();
+    // recursively fetch carriers because shippo returns paginated results
+    function fetchCarriers() {
+      try {
+        const response = Meteor.wrapAsync(shippoObj.carrieraccount.list, shippoObj.carrieraccount)();
+        allCarriers = allCarriers.concat(response.results);
 
-      return carrierAccountList;
-    } catch (error) {
-      Logger.error(error.message);
-      throw new Meteor.Error(error.message);
+        if (!response.next) {
+          response.results = allCarriers;
+          return response;
+        }
+        // the Shippo module uses "createFullPath" to form the url for the request
+        // https://github.com/goshippo/shippo-node-client/blob/master/lib/Resource.js#L40-L48
+        // hence we're passing the next url in this way
+        shippoObj.carrieraccount.createFullPath = () => response.next;
+        return fetchCarriers();
+      } catch (error) {
+        Logger.error(error.message);
+        throw new Meteor.Error(error.message);
+      }
     }
+
+    return fetchCarriers();
   }
 });
 
@@ -100,6 +116,7 @@ ShippoApi.methods.createShipment = new ValidatedMethod({
   }).validator(),
   run({ shippoAddressFrom, shippoAddressTo, shippoParcel, purpose, apiKey, carrierAccounts }) {
     const shippoObj = new Shippo(apiKey);
+    shippoObj.set("version", "2016-10-25");
 
     const createShipmentFiber = Meteor.wrapAsync(shippoObj.shipment.create, shippoObj.shipment);
     try {
@@ -138,6 +155,7 @@ ShippoApi.methods.createTransaction = new ValidatedMethod({
   }).validator(),
   run({ rateId, apiKey }) {
     const shippoObj = new Shippo(apiKey);
+    shippoObj.set("version", "2016-10-25");
 
     const createTransactionFiber = Meteor.wrapAsync(shippoObj.transaction.create, shippoObj.transaction);
     try {
@@ -178,6 +196,7 @@ ShippoApi.methods.getTransaction = new ValidatedMethod({
   }).validator(),
   run({ transactionId, apiKey }) {
     const shippoObj = new Shippo(apiKey);
+    shippoObj.set("version", "2016-10-25");
 
     const retrieveTransactionFiber = Meteor.wrapAsync(shippoObj.transaction.retrieve, shippoObj.transaction);
     try {

@@ -7,6 +7,12 @@ import { Media, Products } from "/lib/collections";
 import { isRevisionControlEnabled } from "/imports/plugins/core/revisions/lib/api";
 import { applyProductRevision } from "/lib/api/products";
 
+function updateVariantProductField(variants, field, value) {
+  return variants.map(variant => {
+    Meteor.call("products/updateProductField", variant._id, field, value);
+  });
+}
+
 Template.productSettings.onCreated(function () {
   this.state = new ReactiveDict();
   this.state.setDefault({
@@ -67,15 +73,35 @@ Template.productSettings.helpers({
   }
 });
 
-Template.productSettingsGridItem.helpers({
-  displayPrice: function () {
+Template.productSettingsListItem.helpers({
+  pdpPath() {
+    const product = this;
+
+    if (product) {
+      let handle = product.handle;
+
+      if (product.__published) {
+        handle = product.__published.handle;
+      }
+
+      return Reaction.Router.pathFor("product", {
+        hash: {
+          handle
+        }
+      });
+    }
+
+    return "/";
+  },
+
+  displayPrice() {
     if (this._id) {
       return ReactionProduct.getProductPriceRange(this._id).range;
     }
     return null;
   },
 
-  media: function () {
+  media() {
     const media = Media.findOne({
       "metadata.productId": this._id,
       "metadata.priority": 0,
@@ -84,52 +110,7 @@ Template.productSettingsGridItem.helpers({
 
     return media instanceof FS.File ? media : false;
   },
-  additionalMedia: function () {
-    const mediaArray = Media.find({
-      "metadata.productId": this._id,
-      "metadata.priority": {
-        $gt: 0
-      },
-      "metadata.toGrid": 1
-    }, { limit: 3 });
 
-    if (mediaArray.count() > 1) {
-      return mediaArray;
-    }
-    return false;
-  },
-  weightClass: function () {
-    const tag = ReactionProduct.getTag();
-    const positions = this.positions && this.positions[tag] || {};
-    const weight = positions.weight || 0;
-    switch (weight) {
-      case 1:
-        return "product-medium";
-      case 2:
-        return "product-large";
-      default:
-        return "product-small";
-    }
-  },
-
-  isMediumWeight: function () {
-    const tag = ReactionProduct.getTag();
-    const positions = this.positions && this.positions[tag] || {};
-    const weight = positions.weight || 0;
-    return weight === 1;
-  },
-  isLargeWeight: function () {
-    const tag = ReactionProduct.getTag();
-    const positions = this.positions && this.positions[tag] || {};
-    const weight = positions.weight || 0;
-    return weight === 3;
-  },
-  shouldShowAdditionalImages: function () {
-    if (this.isMediumWeight && this.mediaArray) {
-      return true;
-    }
-    return false;
-  },
   listItemActiveClassName(productId) {
     const handle = Reaction.Router.current().params.handle;
 
@@ -140,8 +121,6 @@ Template.productSettingsGridItem.helpers({
     return "";
   }
 });
-
-Template.productSettingsListItem.inheritsHelpersFrom("productSettingsGridItem");
 
 /**
  * productExtendedControls events
@@ -158,6 +137,13 @@ Template.productSettings.events({
         // visibility toggle. This is to ensure that all selected products will become visible or not visible
         // at the same time so it's not confusing.
         Meteor.call("products/updateProductField", product._id, "isVisible", !products[0].isVisible);
+        // update the variants visibility
+        const variants = Products.find({
+          ancestors: {
+            $in: [product._id]
+          }
+        });
+        updateVariantProductField(variants, "isVisible", !products[0].isVisible);
       }
     } else {
       // The legacy behavior will bulk toggle visibilty of each product seperatly.
@@ -172,8 +158,8 @@ Template.productSettings.events({
   "click [data-event-action=cloneProduct]": function () {
     ReactionProduct.cloneProduct(this.products);
   },
-  "click [data-event-action=deleteProduct]": function () {
-    ReactionProduct.maybeDeleteProduct(this.products);
+  "click [data-event-action=archiveProduct]": function () {
+    ReactionProduct.archiveProduct(this.products);
   },
   "click [data-event-action=changeProductWeight]": function (event) {
     event.preventDefault();

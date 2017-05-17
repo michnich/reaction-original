@@ -197,10 +197,15 @@ export default {
   },
 
   getUserPreferences(packageName, preference, defaultValue) {
-    const profile = Meteor.user().profile;
-    if (profile && profile.preferences && profile.preferences[packageName] && profile.preferences[packageName][preference]) {
-      return profile.preferences[packageName][preference];
+    const user = Meteor.user();
+
+    if (user) {
+      const profile = Meteor.user().profile;
+      if (profile && profile.preferences && profile.preferences[packageName] && profile.preferences[packageName][preference]) {
+        return profile.preferences[packageName][preference];
+      }
     }
+
     return defaultValue || undefined;
   },
 
@@ -241,6 +246,14 @@ export default {
       shopId: this.shopId
     }) || {};
     return settings.settings || {};
+  },
+
+  getShopCurrency() {
+    const shop = Shops.findOne({
+      _id: this.shopId
+    });
+
+    return shop && shop.currency || "USD";
   },
 
   isPreview() {

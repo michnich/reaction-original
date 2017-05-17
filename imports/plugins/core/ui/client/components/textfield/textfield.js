@@ -70,6 +70,8 @@ class TextField extends Component {
         placeholder={placeholder}
         ref="input"
         value={this.value}
+        style={this.props.style}
+        disabled={this.props.disabled}
       />
     );
   }
@@ -96,8 +98,10 @@ class TextField extends Component {
         onKeyDown={this.onKeyDown}
         placeholder={placeholder}
         ref="input"
-        type="text"
+        type={this.props.type || "text"}
         value={this.value}
+        style={this.props.style}
+        disabled={this.props.disabled}
       />
     );
   }
@@ -173,6 +177,7 @@ TextField.defaultProps = {
 TextField.propTypes = {
   align: PropTypes.oneOf(["left", "center", "right", "justify"]),
   className: PropTypes.string,
+  disabled: PropTypes.bool,
   helpText: PropTypes.string,
   i18nKeyHelpText: PropTypes.string,
   i18nKeyLabel: PropTypes.string,
@@ -185,7 +190,9 @@ TextField.propTypes = {
   onKeyDown: PropTypes.func,
   onReturnKeyDown: PropTypes.func,
   placeholder: PropTypes.string,
-  value: PropTypes.string
+  style: PropTypes.object,
+  type: PropTypes.string,
+  value: PropTypes.any
 };
 
 export default TextField;

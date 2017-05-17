@@ -1,4 +1,5 @@
 import url from "url";
+import packageJson from "/package.json";
 import { merge, uniqWith } from "lodash";
 import { Meteor } from "meteor/meteor";
 import { EJSON } from "meteor/ejson";
@@ -10,11 +11,19 @@ import { registerTemplate } from "./templates";
 import { sendVerificationEmail } from "./accounts";
 import { getMailUrl } from "./email/config";
 
+
 export default {
 
   init() {
+    // make sure the default shop has been created before going further
+    while (!this.getShopId()) {
+      Logger.warn("No shopId, waiting one second...");
+      Meteor._sleepForMs(1000);
+    }
+
     // run onCoreInit hooks
-    Hooks.Events.run("onCoreInit", this);
+    Hooks.Events.run("onCoreInit");
+
     // start job server
     Jobs.startJobServer(() => {
       Logger.info("JobServer started");
@@ -28,8 +37,11 @@ export default {
     this.loadPackages();
     // process imports from packages and any hooked imports
     this.Import.flush();
-    // timing is important, packages are rqd for initilial permissions configuration.
-    this.createDefaultAdminUser();
+    // timing is important, packages are rqd for initial permissions configuration.
+    if (!Meteor.isAppTest) {
+      this.createDefaultAdminUser();
+    }
+    this.setAppVersion();
     // hook after init finished
     Hooks.Events.run("afterCoreInit");
 
@@ -203,8 +215,31 @@ export default {
     return settings.settings || {};
   },
 
+  getShopCurrency() {
+    const shop = Shops.findOne({
+      _id: this.getShopId()
+    });
+
+    return shop && shop.currency || "USD";
+  },
+
+  getShopLanguage() {
+    const { language } = Shops.findOne({
+      _id: this.getShopId()
+    }, {
+      fields: {
+        language: 1
+      } }
+    );
+    return language;
+  },
+
   getPackageSettings(name) {
     return Packages.findOne({ packageName: name, shopId: this.getShopId() }) || null;
+  },
+
+  getAppVersion() {
+    return Shops.findOne().appVersion;
   },
 
   /**
@@ -223,14 +258,10 @@ export default {
     let configureEnv = false;
     let accountId;
 
-    while (!this.getShopId()) {
-      Logger.debug("No shopId, waiting one second...");
-      Meteor._sleepForMs(1000);
-    }
     const shopId = this.getShopId();
 
     // if an admin user has already been created, we'll exit
-    if (Roles.getUsersInRole(defaultAdminRoles, shopId).count() !== 0) {
+    if (Roles.getUsersInRole("owner", shopId).count() !== 0) {
       Logger.debug("Not creating default admin user, already exists");
       return ""; // this default admin has already been created for this shop.
     }
@@ -357,11 +388,11 @@ export default {
       // or attempt to load reaction.json fixture data
       try {
         registryFixtureData = Assets.getText("settings/reaction.json");
+        Logger.info("Loaded \"/private/settings/reaction.json\" for registry fixture import");
       } catch (error) {
         Logger.warn("Skipped loading settings from reaction.json.");
         Logger.debug(error, "loadSettings reaction.json not loaded.");
       }
-      Logger.info("Loaded \"/private/settings/reaction.json\" for registry fixture import");
     }
 
     if (!!registryFixtureData) {
@@ -444,5 +475,10 @@ export default {
         return false;
       });
     });
+  },
+  setAppVersion() {
+    const version = packageJson.version;
+    Logger.info(`Reaction Version: ${version}`);
+    Shops.update({}, { $set: { appVersion: version } }, { multi: true });
   }
 };

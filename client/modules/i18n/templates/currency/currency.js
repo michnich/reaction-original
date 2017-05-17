@@ -1,6 +1,6 @@
 import { Meteor } from "meteor/meteor";
 import { Reaction } from "/client/api";
-import { Shops } from "/lib/collections";
+import { Cart, Shops } from "/lib/collections";
 
 Template.currencySelect.helpers({
   currencies() {
@@ -37,7 +37,9 @@ Template.currencySelect.helpers({
         }
       }
     }
-    return currencies;
+    if (currencies.length > 1) {
+      return currencies;
+    }
   },
 
   currentCurrency() {
@@ -74,5 +76,10 @@ Template.currencySelect.events({
     //
     Meteor.users.update(Meteor.userId(), { $set: { "profile.currency": this.currency } });
     localStorage.setItem("currency", this.currency);
+
+    const cart = Cart.findOne({ userId: Meteor.userId() });
+
+    // Attach changed currency to this users cart
+    Meteor.call("cart/setUserCurrency", cart._id, this.currency);
   }
 });

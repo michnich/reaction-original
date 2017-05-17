@@ -95,6 +95,8 @@
         "noProductsFound": "No products found.",
         "private": "Private",
         "public": "Public",
+        "allOn": "All On",
+        "allOff": "All Off",
         "shortcut": {
           "addProductLabel": "Add Product",
           "accountsLabel": "Accounts"
@@ -157,74 +159,6 @@
           "orderShipped": "Your order has been shipped."
         }
       },
-      "sms": {
-        "headers": {
-          "settings": "SMS Provider"
-        },
-        "settings": {
-          "provider": "Provider",
-          "selectProvider": "Select an SMS provider...",
-          "smsPhone": "SMS Phone Number",
-          "apiKey": "API Key",
-          "apiToken": "API Token/Secret"
-        },
-        "alerts": {
-          "noApiKey": "Please add an API Key",
-          "noApiToken": "Please add an API TOKEN/Secret",
-          "noSmsProvider": "Please choose an SMS provider",
-          "noSmsPhone": "Please add the phone number given to you by your SMS provider",
-          "saveSuccess": "SMS Settings saved"
-        }
-      },
-      "mail": {
-        "headers": {
-          "email": "Email",
-          "emailSettings": "Email Settings",
-          "config": "Configuration",
-          "settings": "SMTP Provider",
-          "status": "Status",
-          "actions": "Actions"
-        },
-        "settings": {
-          "service": "Service",
-          "user": "User",
-          "password": "Password",
-          "host": "Host",
-          "port": "Port",
-          "passwordShow": "Show",
-          "passwordHide": "Hide",
-          "fieldNotSet": "Not set",
-          "selectService": "Select a service...",
-          "custom": "custom"
-        },
-        "logs": {
-          "headers": {
-            "emailLogs": "Email Logs",
-            "email": "Email",
-            "subject": "Subject",
-            "sent": "Sent",
-            "status": "Status"
-          },
-          "noEmails": "No emails sent yet",
-          "limit": "Quantity",
-          "retry": "Retry",
-          "noneAvailble": "None available"
-        },
-        "alerts": {
-          "error": "Error: {{error}}",
-          "resendSuccess": "Attempting to resend email to {{email}}",
-          "missingService": "Please choose a mail provider service",
-          "userPassRequired": "SMTP user and password are required for {{service}}",
-          "allFieldsRequired": "All fields are required for a custom service!",
-          "portNaN": "The port must be a number!",
-          "connectionFailed": "Connection failed!",
-          "saveAnyway": "Do you want to save the settings anyway?",
-          "saveSuccess": "Mail settings saved.",
-          "saveFailed": "Failed to save mail settings. {{error}}",
-          "cantSendEmail": "Server Error: Can't send email notification.",
-          "emailSent": "Email notification sent."
-        }
-      },
       "header": {
         "tagsAdd": "Add tag",
         "search": "Search products..."
@@ -251,9 +185,8 @@
         "addToCart": "Add to cart",
         "chooseOptions": "Please choose options before adding to cart",
         "outOfStock": "Sorry, this item is out of stock!",
-        "productDeleteError": "There was an error deleting {{product}}.",
-        "deleteErrorTheProduct": "the product",
-        "deleteErrorTheSelectedProducts": "the selected products",
+        "productArchiveError": "There was an error while sending {{product}} to the archives.",
+        "archiveErrorTheProduct": "the product",
         "publishFirst": "Publish product before adding to cart.",
         "quantityAbbreviation": "QTY",
         "selectOption": "Select an option before adding to cart",
@@ -266,8 +199,6 @@
         "publishProductHidden": "{{product}} is now hidden",
         "clonedAlert": "Cloned {{product}}",
         "clonedAlert_plural": "Cloned {{product}}",
-        "deletedAlert": "Deleted {{product}}",
-        "deletedAlert_plural": "Deleted {{product}}",
         "archivedAlert": "Archived {{product}}",
         "archivedAlert_plural": "Archived {{product}}",
         "theProduct": "the product",
@@ -299,6 +230,7 @@
         "pageTitle": "Subtitle",
         "vendor": "Vendor",
         "description": "Description",
+        "originCountry": "Origin Country",
         "facebookMsg": "Facebook Message",
         "twitterMsg": "Twitter Message",
         "pinterestMsg": "Pinterest Message",
@@ -312,7 +244,7 @@
         "cloneVariantFail": "Unable to clone variant for {{title}}.",
         "removeVariant": "Remove",
         "removeVariantConfirm": "Are you sure you want to delete {{title}}",
-        "restoreVariantConfirm": "Are you sure you want to restore {{title}} from the trash?",
+        "restoreVariantConfirm": "Are you sure you want to restore {{title}} from the archive?",
         "restoreVariantFail": "Unable to restore {{title}}.",
         "archiveVariantConfirm": "Are you sure you want to archive {{title}}",
         "thisVariant": "this variant",
@@ -320,9 +252,8 @@
         "duplicateProduct": "Duplicate Product",
         "pinProduct": "Pin Product",
         "toggleSize": "Toggle Size",
-        "deleteProduct": "Delete Product",
-        "restoreProduct": "Restore Product from Trash",
-        "deleteSelectedProducts": "Delete selected products?",
+        "archiveProduct": "Archive Product",
+        "restoreProduct": "Restore Product from archive",
         "archiveThisProduct": "Archive this product?",
         "archiveSelectedProducts": "Archive selected products?",
         "publish": "Publish",
@@ -342,16 +273,23 @@
         "price": "Price",
         "optionTitle": "Option",
         "barcode": "Barcode",
-        "compareAtPrice": "Price (MSRP)",
+        "compareAtPrice": "MSRP",
         "fulfillmentService": "Fulfillment service",
         "weight": "Weight",
+        "length": "Length",
+        "width": "Width",
+        "height": "Height",
         "taxable": "Taxable",
-        "inventoryManagement": "Inventory tracking",
+        "taxCode": "Tax Code",
+        "taxDescription": "Tax Description",
+        "inventoryManagement": "Inventory Tracking",
         "inventoryManagementLabel": "Register product in inventory system and track its status",
-        "inventoryPolicy": "Deny when out of stock",
+        "inventoryPolicy": "Allow Backorder",
         "inventoryPolicyLabel": "Do not sell the product variant when it is not in stock",
-        "lowInventoryWarningThreshold": "Warn @",
-        "lowInventoryWarningThresholdLabel": "Warn customers that the product will be close to sold out when the quantity reaches the next threshold"
+        "lowInventoryWarningThreshold": "Warn At",
+        "lowInventoryWarningThresholdLabel": "Warn customers that the product will be close to sold out when the quantity reaches the next threshold",
+        "originCountry": "Origin Country",
+        "selectTaxCode": "Select Tax Code"
       },
       "variantList": {
         "moreOptions": "There are more options available for this selection.",
@@ -391,16 +329,24 @@
       "order": {
         "created": "Created",
         "reference": "Reference",
+        "cancelInvoice": "Cancel",
         "invoice": "Invoice",
         "ordersNotFound": "No orders found",
         "approveInvoice": "Approve",
+        "cancelOrderLabel": "Cancel Order",
         "makeAdjustments": "Make Adjustments",
         "capturePayment": "Capture Payment",
         "paymentCaptured": "Payment Captured",
         "capturedTotal": "Captured Total",
+        "canceledLabel": "Canceled",
         "refundAmount": "Refund Amount",
+        "cancelOrder": "Do you want to cancel this order?",
         "applyRefundToThisOrder": "Apply refund of {{currencySymbol}}{{refund}} to this order?",
+        "applyRefundDuringCancelOrder": "This will refund the order total of {{currencySymbol}}{{invoiceTotal}}",
+        "cancelOrderThenRestock": "Yes, and restock",
+        "cancelOrderNoRestock": "Yes, but no restocking",
         "applyRefund": "Apply Refund",
+        "refunding": "Refunding",
         "applyDiscount": "Apply Discount",
         "adjustedTotal": "Adjusted Total",
         "invalidDiscount": "Discount cannot be greater than original total price",
@@ -424,7 +370,8 @@
           "completed": "Completed",
           "canceled": "Canceled",
           "refunded": "Refunded"
-        }
+        },
+        "showMore": "Show More"
       },
       "orderShipping": {
         "shipTo": "Ship To",

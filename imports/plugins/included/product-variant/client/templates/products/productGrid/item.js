@@ -171,7 +171,7 @@ Template.productGridItems.events({
   "dblclick [data-event-action=productClick]": function (event, template) {
     const instance = template;
     const product = instance.data;
-    const handle = product.handle;
+    const handle = product.__published && product.__published.handle || product.handle;
 
     Reaction.Router.go("product", {
       handle: handle
@@ -242,6 +242,16 @@ Template.productGridItems.events({
           $checkbox.prop("checked", true).trigger("change");
         }
       }
+    } else {
+      event.preventDefault();
+
+      const instance = template;
+      const product = instance.data;
+      const handle = product.__published && product.__published.handle || product.handle;
+
+      Reaction.Router.go("product", {
+        handle: handle
+      });
     }
   },
   "click [data-event-action=selectSingleProduct]": function (event, template) {
@@ -258,7 +268,7 @@ Template.productGridItems.events({
   },
   "click .delete-product": function (event) {
     event.preventDefault();
-    ReactionProduct.maybeDeleteProduct(this);
+    ReactionProduct.archiveProduct(this);
   },
   "click .update-product-weight": function (event) {
     event.preventDefault();
